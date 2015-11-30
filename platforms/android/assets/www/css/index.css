@@ -1,0 +1,7 @@
+.list table td {
+    height: 3.5em;
+}
+
+.list table tbody tr.selected td {
+    background-color: #eee;
+}

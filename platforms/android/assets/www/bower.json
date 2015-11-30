@@ -1,0 +1,24 @@
+{
+  "name": "cwepbu_library",
+  "version": "0.0.1",
+  "authors": [
+    "vantist <s7790428@gmail.com>"
+  ],
+  "description": "homework",
+  "moduleType": [
+    "amd"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "~3.3.6",
+    "dustjs-linkedin": "~2.7.2",
+    "requirejs": "~2.1.22"
+  }
+}

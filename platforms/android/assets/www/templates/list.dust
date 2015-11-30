@@ -1,0 +1,38 @@
+<table>
+	<thead>
+		<tr>
+			<th>#</th>
+			<th>Title</th>
+			<th>Category</th>
+			<th>Author</th>
+			<th>ISBN</th>
+			<th>File</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		{#.}
+		<tr>
+			<td>{$idx}</td>
+			<td>{title}</td>
+			<td>{category}</td>
+			<td>{author}</td>
+			<td>{isbn}</td>
+			<td>
+				{?link}
+					<a href="{link}">Download</a>
+				{:else}
+					None file.
+				{/link}
+			</td>
+			<td>
+				{?link}
+					<input type="button" name="file_{$idx}" value="Delete" />
+				{:else}
+					<input type="file" name="file_{$idx}" value="Upload" />
+				{/link}
+			</td>
+		</tr>
+		{/.}
+	</tbody>
+</table>

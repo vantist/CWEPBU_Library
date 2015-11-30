@@ -1,0 +1,4 @@
+<button name="close">Close</button>
+<canvas name="pdf"></canvas>
+<button name="prev">prev</button>
+<button name="next">next</button>

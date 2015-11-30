@@ -1,0 +1,35 @@
+<table>
+	<thead>
+		<tr>
+			<th>#</th>
+			<th>Title</th>
+			<th>Category</th>
+			<th>Author</th>
+			<th>ISBN</th>
+			<th>File</th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		{#.}
+		<tr>
+			<td>{$idx}</td>
+			<td>{title}</td>
+			<td>{category}</td>
+			<td>{author}</td>
+			<td>{isbn}</td>
+			<td>
+				{?link}
+					<button>Preview</button>
+				{:else}
+					None.
+				{/link}
+			</td>
+			<td>
+				<button>Edit</button>
+				<button>Delete</button>
+			</td>
+		</tr>
+		{/.}
+	</tbody>
+</table>
