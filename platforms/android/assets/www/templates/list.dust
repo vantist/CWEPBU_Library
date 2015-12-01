@@ -20,17 +20,14 @@
 			<td>{isbn}</td>
 			<td>
 				{?link}
-					<a href="{link}">Download</a>
+					<button>Preview</button>
 				{:else}
-					None file.
+					None.
 				{/link}
 			</td>
 			<td>
-				{?link}
-					<input type="button" name="file_{$idx}" value="Delete" />
-				{:else}
-					<input type="file" name="file_{$idx}" value="Upload" />
-				{/link}
+				<button>Edit</button>
+				<button>Delete</button>
 			</td>
 		</tr>
 		{/.}

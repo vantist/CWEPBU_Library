@@ -1,4 +1,4 @@
-/* globals require: false */
+/* globals require: false, StatusBar: false */
 require.config({
     baseUrl: '',
     paths: {
@@ -10,7 +10,8 @@ require.config({
         dustjs: 'js/dust_config',
         app: 'js/app',
         list: 'js/list',
-        form: 'js/form'
+        form: 'js/form',
+        util: 'js/util'
     },
     shim: {
         jquery: {

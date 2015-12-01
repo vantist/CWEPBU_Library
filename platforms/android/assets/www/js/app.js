@@ -6,6 +6,8 @@ define('app', ['jquery', 'list', 'form'], function ($, list, form) {
         $form = $('div.form');
 
     function init() {
+        StatusBar.hide();
+        
         this.renderList([{
             title: '測試',
             category: '類別',
@@ -52,7 +54,7 @@ define('app', ['jquery', 'list', 'form'], function ($, list, form) {
     }
 
     function renderForm() {
-        form.render($form, {});
+        form.render($form);
     }
 
     return {

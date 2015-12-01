@@ -6,12 +6,12 @@ define('form', ['jquery', 'dustjs'], function ($, dust) {
 
     function init($form) {
         _$form = $form || _$form;
-        this.refresh();
+        refresh();
     }
 
     function refresh() {
-        this.render(_$form);
-        this.bindEvent();
+        render(_$form);
+        bindEvent();
     }
 
     /**
@@ -20,7 +20,9 @@ define('form', ['jquery', 'dustjs'], function ($, dust) {
      */
     function render($form, data) {
         var _$form = $form || $('div.form'),
-            data = data || {};
+            data = data || {
+                create: true
+            };
 
         dust.render('form', data, function (err, out) {
             console.log(out);
@@ -31,16 +33,16 @@ define('form', ['jquery', 'dustjs'], function ($, dust) {
                 _$form.empty().append(out);
             }
         });
+
+        bindEvent();
     }
 
     function bindEvent() {
-        var _$tr = $(_$form.find('tbody tr'));
-
-        _$tr.on('touch', )
     }
 
     return {
         init: init,
-        refresh: refresh
+        refresh: refresh,
+        render: render
     };
 });
