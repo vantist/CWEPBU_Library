@@ -3,6 +3,7 @@ define('list', ['jquery', 'dustjs'], function ($, dust) {
     'use strict';
 
     var _$list = $('div.list');
+    var selectedCallback = function () {};
 
     /**
      * @param  {jquery object} render target
@@ -30,10 +31,19 @@ define('list', ['jquery', 'dustjs'], function ($, dust) {
 
             $tr.addClass('selected');
             $tr.siblings().removeClass('selected');
+
+            selectedCallback.call(this, event, Number($tr.attr('idx')));
         });
     }
 
+    function onSelectedEvent(callback) {
+        if (typeof callback === 'function') {
+            selectedCallback = callback;
+        }
+    }
+
     return {
-        render: render
+        render: render,
+        onSelectedEvent: onSelectedEvent
     };
 });

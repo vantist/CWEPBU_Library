@@ -1,65 +1,82 @@
-/* globals define: false */
-define('app', ['jquery', 'list', 'form'], function ($, list, form) {
+/* globals define: false, StatusBar: false */
+define('app', ['jquery', 'list', 'form', 'book'], function ($, list, form, book) {
     'use strict';
 
     var $list = $('div.list'),
-        $form = $('div.form');
+        $form = $('div.form'),
+        form_create_mode = true,
+        _books = [],
+        _self = this;
+
+    function refresh() {
+        book.fetch(function (books) {
+            _books = books;
+            list.render($list, _books);
+            form.refresh();
+        });
+    }
+
+    function initList() {
+        list.onSelectedEvent(function (event, index) {
+            var data = _books[index];
+            console.log('selected!!');
+            data.create = false;
+            form.render(undefined, data);
+        });
+
+        list.render($list, _books);
+    }
+
+    function initForm() {
+        form.eventHandler.onSaveEvent(function (formData) {
+            formData.id = (new Date).getTime();
+            book.create(formData, function () {
+                refresh();
+            }, function () {
+                console.error('save book error');
+            });
+            console.log('save book: ');
+            console.dir(formData);
+        });
+
+        form.eventHandler.onDeleteEvent(function (formData) {
+            book.remove(
+                formData.id,
+                function () {
+                    console.log('remove suc');
+                    refresh();
+                },
+                function () {
+                    console.log('remove fail');
+                }
+            );
+        });
+
+        form.eventHandler.onUpdateEvent(function (formData) {
+            book.update(
+                formData.id,
+                formData,
+                function () {
+                    console.log('update suc');
+                    refresh();
+                },
+                function () {
+                    console.log('update fail');
+                }
+            );
+        });
+
+        form.init();
+    }
 
     function init() {
         StatusBar.hide();
-        
-        this.renderList([{
-            title: '測試',
-            category: '類別',
-            author: '作者',
-            isbn: '1578612315347',
-            link: '123456.pdf'
-        }, {
-            title: '測試1',
-            category: '類別1',
-            author: '作者1',
-            isbn: '1578614442315347',
-            link: '32412.pdf'
-        }, {
-            title: '測試3',
-            category: '類別2',
-            author: '作者4',
-            isbn: '1578612315347',
-            link: ''
-        }, {
-            title: '測試7',
-            category: '類別5',
-            author: '作者',
-            isbn: '15786efw12315347',
-            link: '12345dsf6.pdf'
-        }, {
-            title: '測試',
-            category: '類別',
-            author: '作者',
-            isbn: '1578612315347',
-            link: '123456.pdf'
-        }, {
-            title: '測試',
-            category: '類別',
-            author: '作者',
-            isbn: '1578612315347',
-            link: '123456.pdf'
-        }]);
-
-        this.renderForm();
-    }
-
-    function renderList(data) {
-        list.render($list, data);
-    }
-
-    function renderForm() {
-        form.render($form);
+        initList();
+        initForm();
+        refresh();
     }
 
     return {
-        init: init,
-        renderList: renderList,
-        renderForm: renderForm
+        init: init
     };
 });

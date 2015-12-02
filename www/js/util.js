@@ -1,5 +1,5 @@
 /* globals define: false, FileTransfer: false, PDFRenderer: false, cordova: false, resolveLocalFileSystemURL: false */
-define('util', [], function () {
+define('util', ['jquery'], function ($) {
     'use strict';
     var fileTransfer = new FileTransfer();
 
@@ -11,6 +11,97 @@ define('util', [], function () {
                 successCallback.call(this, entry.toInternalURL());
             }
         });
+    }
+
+    function getEntry(path, file_name, option, callback) {
+        resolveLocalFileSystemURL(path, function (dir) {
+            option = option || {};
+            dir.getFile(file_name, option, function (entry) {
+                if (typeof callback === 'function') {
+                    callback.call(this, entry);
+                }
+            });
+        });
+    }
+
+    function read(path, file_name, successCallback, failCallback) {
+        getEntry(
+            path,
+            file_name, { 
+                create: true
+            }, function (entry) {
+                entry.file(function (file) {
+                    var reader = new FileReader();
+
+                    reader.onloadend = function (e) {
+                        console.log(this.result);
+
+                        if (typeof successCallback === 'function') {
+                            successCallback.call(this, JSON.parse(this.result));
+                        }
+                    }
+
+                    reader.readAsText(file);
+                }, function (error) {
+                    console.error(error);
+
+                    if (typeof failCallback === 'function') {
+                        failCallback.call(this, error);
+                    }
+                });
+            }
+        );
+    }
+
+    function write(path, file_name, data, writeendCallback, failCallback) {
+        getEntry(
+            path,
+            file_name, { 
+                create: true 
+            }, function (entry) {
+                entry.createWriter(function (fileWriter) {
+                    if (typeof failCallback === 'function') {
+                        fileWriter.onerror = failCallback;
+                    }
+
+                    if (typeof writeendCallback === 'function') {
+                        fileWriter.onwriteend = writeendCallback;
+                    }
+
+                    fileWriter.seek(fileWriter.length);
+
+                    var blob = new Blob([JSON.stringify(data)], {
+                        type: 'text/plain'
+                    });
+
+                    fileWriter.write(blob);
+                });
+            }
+        );
+    }
+
+    function remove(path, file_name, successCallback, failCallback) {
+        getEntry(
+            path,
+            file_name, {
+                create: false,
+                exclusive: false
+            }, function (entry) {
+                entry.remove(function (entry) {
+                    console.log("Removal succeeded");
+
+                    if (typeof successCallback === 'function') {
+                        successCallback.call(this, entry);
+                    }
+                }, function (error) {
+                    console.error("Error removing file: " + error.code);
+
+                    if (typeof failCallback === 'function') {
+                        failCallback.call(this, error);
+                    }
+                });
+            }
+        );
     }
 
     function download(uri, fileURL, successCallback, failCallback) {
@@ -43,8 +134,7 @@ define('util', [], function () {
     function openWithNative(uri, mine_type, successCallback, failCallback) {
         cordova.plugins.fileOpener2.open(
             uri,
-            mine_type,
-            {
+            mine_type, {
                 error: function () {
                     console.log('error');
 
@@ -156,6 +246,19 @@ define('util', [], function () {
         }, option);
     }
 
+    function fileTransferProgressCallback(callback) {
+        fileTransfer.onprogress = function (progressEvent) {
+            if (progressEvent.lengthComputable) {
+                console.log(progressEvent.loaded / progressEvent.total);
+            } else {
+                console.log('progress +++');
+            }
+
+            if (typeof callback === 'function') {
+                callback.call(this, progressEvent);
+            }
+        };
+    }
 
     return {
         file: {
@@ -163,7 +266,12 @@ define('util', [], function () {
             downloadWithFileURL: downloadWithFileURL,
             downloadWithURL: downloadWithURL,
             openWithNative: openWithNative,
-            toInternalURL: toInternalURL
+            toInternalURL: toInternalURL,
+            fileTransferProgressCallback: fileTransferProgressCallback,
+            getEntry: getEntry,
+            read: read,
+            write: write,
+            remove: remove
         },
         pdf: {
             open: openWithPDF,

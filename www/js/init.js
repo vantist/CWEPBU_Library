@@ -11,7 +11,8 @@ require.config({
         app: 'js/app',
         list: 'js/list',
         form: 'js/form',
-        util: 'js/util'
+        util: 'js/util',
+        book: 'js/book'
     },
     shim: {
         jquery: {

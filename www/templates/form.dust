@@ -1,7 +1,8 @@
 {?create}
 	<h3>Create mode</h3>
+	<input type="hidden" name="id"/>
 	Title: <input type="text" name="title"><br/>
-	Category: 
+{! 	Category: 
 	<select name="category">
 		<option value="0">文學</option>
 		<option value="1">藝術設計</option>
@@ -11,15 +12,16 @@
 		<option value="5">人文社科</option>
 		<option value="6">自然科普</option>
 	</select><br/>
-	Author: <input type="text" name="author"/><br/>
+	Author: <input type="text" name="author"/><br/> !}
 	ISBN: <input type="text" name="isbn"/><br/>
 	Upload file: <input type="file"/><br/>
-	<button>Save</button>
-	<button>Clear</button>
+	<button name="save">Save</button>
+	<button name="clear">Clear</button>
 {:else}
 	<h3>Edit mode</h3>
+	<input type="hidden" name="id" value="{id}"/>
 	Title: <input type="text" name="title" value="{title}"><br/>
-	Category: 
+{! 	Category: 
 	<select name="category" value="{category}">
 		<option value="0">文學</option>
 		<option value="1">藝術設計</option>
@@ -29,15 +31,13 @@
 		<option value="5">人文社科</option>
 		<option value="6">自然科普</option>
 	</select><br/>
-	Author: <input type="text" name="author" value="{author}"/><br/>
+	Author: <input type="text" name="author" value="{author}"/><br/> !}
 	ISBN: <input type="text" name="isbn" value="{isbn}"/><br/>
 	{?link}
-		Update file: <button>Choose file</button><b/>
-		Delete file: <button>Delete</button><br/>
+		Delete file: <button name="delete">Delete</button><br/>
 	{:else}
-		Upload file: <input type="file"/><br/>
+		Upload file: <input type="file"/><button name="update">Upload</button><br/>
 	{/link}
-	<button>Save</button>
-	<button>Delete</button>
-	<button>Cancel</button>
+	<button name="update">Update</button>
+	<button name="cancel">Cancel</button>
 {/create}

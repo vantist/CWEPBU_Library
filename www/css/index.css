@@ -3,6 +3,7 @@ div.image-pool {
 }
 
 .list table {
+	width: 100%;
     border-spacing: 0;
 }
 
@@ -14,4 +15,16 @@ div.image-pool {
 .list table tbody tr.selected td {
     background-color: #eee;
     border-color: #eee;
+}
+
+.form {
+	line-height: 3em;
+}
+
+button {
+	padding: 1em;
+}
+
+input {
+	padding: 1em;
 }

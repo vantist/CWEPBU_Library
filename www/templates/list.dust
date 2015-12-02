@@ -3,8 +3,8 @@
 		<tr>
 			<th>#</th>
 			<th>Title</th>
-			<th>Category</th>
-			<th>Author</th>
+{! 			<th>Category</th>
+			<th>Author</th> !}
 			<th>ISBN</th>
 			<th>File</th>
 			<th></th>
@@ -12,22 +12,22 @@
 	</thead>
 	<tbody>
 		{#.}
-		<tr>
+		<tr idx="{$idx}">
 			<td>{$idx}</td>
 			<td>{title}</td>
-			<td>{category}</td>
-			<td>{author}</td>
+{! 			<td>{category}</td>
+			<td>{author}</td> !}
 			<td>{isbn}</td>
 			<td>
 				{?link}
-					<button>Preview</button>
+					<button class="preview" name="{isbn}" link="{link}">Preview</button>
 				{:else}
 					None.
 				{/link}
 			</td>
 			<td>
-				<button>Edit</button>
-				<button>Delete</button>
+				<button class="edit" name="{isbn}">Edit</button>
+				<button class="delete" name="{isbn}">Delete</button>
 			</td>
 		</tr>
 		{/.}
