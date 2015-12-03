@@ -1,5 +1,5 @@
 /* globals define: false, FileTransfer: false, PDFRenderer: false, cordova: false, resolveLocalFileSystemURL: false */
-define('util', ['jquery'], function ($) {
+define('util', [], function () {
     'use strict';
     var fileTransfer = new FileTransfer();
 

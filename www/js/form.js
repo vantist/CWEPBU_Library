@@ -6,7 +6,10 @@ define('form', ['jquery', 'dustjs'], function ($, dust) {
         _self = this,
         saveCallback = function () {},
         deleteCallback = function () {},
-        updateCallback = function () {};
+        updateCallback = function () {},
+        cancelCallback = function () {},
+        CREATE_MODE = true,
+        EDIT_MODE = false;
 
     function init($form) {
         _$form = $form || _$form;
@@ -15,28 +18,30 @@ define('form', ['jquery', 'dustjs'], function ($, dust) {
     }
 
     function refresh() {
-        render(_$form);
+        render(_$form, {}, CREATE_MODE);
     }
 
     /**
      * @param  {jquery object} render target
      * @param  {json data} template source data
      */
-    function render($form, data) {
-        var _$form = $form || $('div.form'),
-            data = data || {
-                create: true
-            };
+    function render($form, data, type) {
+        var _$form = $form || $('div.form');
 
-        dust.render('form', data, function (err, out) {
-            console.log(out);
+        dust.render(
+            'form', {
+                create: type,
+                book: data
+            },
+            function (err, out) {
 
-            if (err) {
-                console.error(err);
-            } else {
-                _$form.empty().append(out);
+                if (err) {
+                    console.error(err);
+                } else {
+                    _$form.empty().append(out);
+                }
             }
-        });
+        );
     }
 
     function getFormData() {
@@ -53,21 +58,17 @@ define('form', ['jquery', 'dustjs'], function ($, dust) {
         _$form.on('touchend', 'button[name="save"]', function () {
             console.log('touchend save button');
             saveCallback.call(this, getFormData());
-            refresh();
         }).on('touchend', 'button[name="clear"]', function () {
             console.log('touchend clear button');
-            refresh();
         }).on('touchend', 'button[name="delete"]', function () {
             console.log('touchend delete button');
             deleteCallback.call(this, getFormData());
-            refresh();
         }).on('touchend', 'button[name="update"]', function () {
             console.log('touchend update button');
             updateCallback.call(this, getFormData());
-            refresh();
         }).on('touchend', 'button[name="cancel"]', function () {
             console.log('touchend cancel button');
-            refresh();
+            cancelCallback.call(this);
         });
     }
 
@@ -89,6 +90,12 @@ define('form', ['jquery', 'dustjs'], function ($, dust) {
         }
     }
 
+    function onCancelEvent(callback) {
+        if (typeof callback === 'function') {
+            cancelCallback = callback;
+        }
+    }
+
     return {
         init: init,
         refresh: refresh,
@@ -96,7 +103,10 @@ define('form', ['jquery', 'dustjs'], function ($, dust) {
         eventHandler: {
             onSaveEvent: onSaveEvent,
             onDeleteEvent: onDeleteEvent,
-            onUpdateEvent: onUpdateEvent
-        }
+            onUpdateEvent: onUpdateEvent,
+            onCancelEvent: onCancelEvent
+        },
+        CREATE_MODE: CREATE_MODE,
+        EDIT_MODE: EDIT_MODE
     };
 });

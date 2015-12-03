@@ -1,14 +1,26 @@
 /* globals define: false */
-define('book', ['util'], function (util) {
+define('book_service', ['util'], function (util) {
     'use strict';
 
     var book_list_path = cordova.file.externalDataDirectory + 'books/';
     var list_file = 'list.json';
-    var books = [];
+    var _books = [];
+
+    function convertBookData(data) {
+        var define_attr = ['id', 'title', 'isbn', 'link'],
+        obj = {};
+
+        for (var i in define_attr) {
+            var attr = define_attr[i];
+            obj[attr] = data[attr];
+        }
+
+        return obj;
+    }
 
     function create(data, successCallback, failCallback) {
         if (data !== undefined) {
-            books.push(data);
+            _books.push(convertBookData(data));
         }
 
         util.file.remove(
@@ -18,10 +30,9 @@ define('book', ['util'], function (util) {
                 util.file.write(
                     book_list_path,
                     list_file,
-                    books,
+                    _books,
                     function () {
                         console.log('added book to list');
-                        console.log('data: ' + data);
 
                         if (typeof successCallback === 'function') {
                             successCallback.call(this);
@@ -52,7 +63,10 @@ define('book', ['util'], function (util) {
             book_list_path,
             list_file,
             function (list) {
-                books = list;
+                _books = list;
+
+                console.log('fetch done.');
+                console.log(_books);
 
                 if (typeof callback === 'function') {
                     callback.call(this, list);
@@ -64,12 +78,11 @@ define('book', ['util'], function (util) {
         );
     }
 
-    function getBookWithId(id, successCallback, failCallback) {
-        var result;
+    function getBookIndexWithId(id) {
+        id = Number(id);
 
-        for (var i = books.length - 1; i >= 0; i--) {
-            if (books[i].id === id) {
-                result = books[i];
+        for (var i = _books.length - 1; i >= 0; i--) {
+            if (_books[i].id === id) {
                 break;
             }
         }
@@ -78,7 +91,7 @@ define('book', ['util'], function (util) {
     }
 
     function checkExist(id) {
-        if (getBookWithId(id) >= 0) {
+        if (getBookIndexWithId(id) >= 0) {
             return true;
         }
 
@@ -86,12 +99,16 @@ define('book', ['util'], function (util) {
     }
 
     function updateBook(id, data) {
-        var index = getBookWithId(id);
-        books[index] = data;
+        var index = getBookIndexWithId(id);
+
+        if (index >= 0) {
+            _books[index] = convertBookData(data);
+        }
     }
 
     function update(id, data, successCallback, failCallback) {
-        updateBook(id, data);
+        updateBook(id, data);  
+
         create(
             undefined,
             function () {
@@ -105,26 +122,13 @@ define('book', ['util'], function (util) {
                 }
             }
         );
-        // util.file.remove(
-        //     book_list_path,
-        //     list_file,
-        //     function (entry) {
-        //         if (id !== undefined) {
-        //             updateBook(id, data);
-        //         }
-        //         create();
-        //     },
-        //     function (error) {
-        //         console.error('update fail on remove stage');
-        //     }
-        // );
     }
 
     function remove(id, successCallback, failCallback) {
-        var index = getBookWithId(id);
-        books = books.splice(index, 1);
-        update(
-            undefined,
+        var index = getBookIndexWithId(id);
+        _books.splice(index, 1);
+
+        create(
             undefined,
             function () {
                 if (typeof successCallback === 'function') {
@@ -139,6 +143,14 @@ define('book', ['util'], function (util) {
         );
     }
 
+    function get() {
+        return _books;
+    }
+
+    function set(books) {
+        _books = books;
+    }
+
     function uploadPDF() {
 
     }
@@ -150,6 +162,8 @@ define('book', ['util'], function (util) {
     return {
         checkExist: checkExist,
         fetch: fetch,
+        get: get,
+        set: set,
         remove: remove,
         update: update,
         create: create,

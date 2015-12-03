@@ -20,14 +20,13 @@
 			<td>{isbn}</td>
 			<td>
 				{?link}
-					<button class="preview" name="{isbn}" link="{link}">Preview</button>
+					<button class="preview" name="{id}" link="{link}">Preview</button>
 				{:else}
 					None.
 				{/link}
 			</td>
 			<td>
-				<button class="edit" name="{isbn}">Edit</button>
-				<button class="delete" name="{isbn}">Delete</button>
+				<button class="delete" name="{id}">Delete</button>
 			</td>
 		</tr>
 		{/.}

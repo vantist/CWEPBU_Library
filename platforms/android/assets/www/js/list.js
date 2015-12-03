@@ -2,8 +2,16 @@
 define('list', ['jquery', 'dustjs'], function ($, dust) {
     'use strict';
 
-    var _$list = $('div.list');
-    var selectedCallback = function () {};
+    var _$list = $('div.list'),
+        selectedCallback = function () {},
+        deleteCallback = function () {},
+        SELECTED_CLASSNAME = 'selected';
+
+
+    function init() {
+        render();
+        bindEvent();
+    }
 
     /**
      * @param  {jquery object} render target
@@ -18,8 +26,6 @@ define('list', ['jquery', 'dustjs'], function ($, dust) {
                 $list.empty().append(out);
             }
         });
-
-        bindEvent();
     }
 
     function bindEvent() {
@@ -29,10 +35,19 @@ define('list', ['jquery', 'dustjs'], function ($, dust) {
             var $target = $(event.target),
                 $tr = $target.parent();
 
-            $tr.addClass('selected');
-            $tr.siblings().removeClass('selected');
+            if ($tr.hasClass(SELECTED_CLASSNAME)) {
+                $tr.removeClass(SELECTED_CLASSNAME);
+                selectedCallback.call(this, event, -1);
+            } else {
+                $tr.addClass(SELECTED_CLASSNAME);
+                $tr.siblings().removeClass(SELECTED_CLASSNAME);
 
-            selectedCallback.call(this, event, Number($tr.attr('idx')));
+                selectedCallback.call(this, event, Number($tr.attr('idx')));
+            }
+        }).on('touchend', 'button.delete', function (event) {
+            var id = Number($(this).attr('name'));
+            console.log('list delete button touchend, id: ' + id);
+            deleteCallback.call(this, event, id);
         });
     }
 
@@ -42,8 +57,23 @@ define('list', ['jquery', 'dustjs'], function ($, dust) {
         }
     }
 
+    function onDeleteEvent(callback) {
+        if (typeof callback === 'function') {
+            deleteCallback = callback;
+        }
+    }
+
+    function clearSelected() {
+        $(_$list.find('.selected')).removeClass('selected');
+    }
+
     return {
+        init: init,
         render: render,
-        onSelectedEvent: onSelectedEvent
+        eventHandler: {
+            onSelectedEvent: onSelectedEvent,
+            onDeleteEvent: onDeleteEvent
+        },
+        clearSelected: clearSelected
     };
 });
