@@ -2,13 +2,17 @@
 define('book_service', ['util'], function (util) {
     'use strict';
 
-    var book_list_path = cordova.file.externalDataDirectory + 'books/';
-    var list_file = 'list.json';
-    var _books = [];
+    var base_path = cordova.file.externalDataDirectory || cordova.file.applicationStorageDirectory,
+        book_list_path = base_path + 'books/',
+        list_file = 'list.json',
+        _books = [];
+
+    console.log('base_path:', base_path);
+    console.log('book_list_path:', book_list_path);
 
     function convertBookData(data) {
-        var define_attr = ['id', 'title', 'isbn', 'link'],
-        obj = {};
+        var define_attr = ['id', 'title', 'isbn', 'filename'],
+            obj = {};
 
         for (var i in define_attr) {
             var attr = define_attr[i];
@@ -23,33 +27,20 @@ define('book_service', ['util'], function (util) {
             _books.push(convertBookData(data));
         }
 
-        util.file.remove(
+        util.file.write(
             book_list_path,
             list_file,
-            function (entry) {
-                util.file.write(
-                    book_list_path,
-                    list_file,
-                    _books,
-                    function () {
-                        console.log('added book to list');
+            _books,
+            function () {
+                console.log('added book to list');
 
-                        if (typeof successCallback === 'function') {
-                            successCallback.call(this);
-                        }
-                    },
-                    function (error) {
-                        console.log('add book error');
-                        console.error(error);
-
-                        if (typeof failCallback === 'function') {
-                            failCallback.call(this);
-                        }
-                    }
-                );
+                if (typeof successCallback === 'function') {
+                    successCallback.call(this);
+                }
             },
             function (error) {
-                console.error('create fail on remove stage');
+                console.log('add book error');
+                console.error(error);
 
                 if (typeof failCallback === 'function') {
                     failCallback.call(this);
@@ -59,6 +50,7 @@ define('book_service', ['util'], function (util) {
     }
 
     function fetch(callback) {
+        console.log('fetch start');
         util.file.read(
             book_list_path,
             list_file,
@@ -106,8 +98,8 @@ define('book_service', ['util'], function (util) {
         }
     }
 
-    function update(id, data, successCallback, failCallback) {
-        updateBook(id, data);  
+    function update(data, successCallback, failCallback) {
+        updateBook(data.id, data);
 
         create(
             undefined,
@@ -151,11 +143,119 @@ define('book_service', ['util'], function (util) {
         _books = books;
     }
 
-    function uploadPDF() {
+    function createWithPDF(data, file, successCallback, failCallback, readingProgressCallback, writingProgressCallback) {
+        var fileName = data.id + '.pdf';
+        data.filename = fileName;
 
+        util.file.writeWithFile(
+            book_list_path,
+            fileName,
+            file.files[0],
+            function (uri) {
+                create(data, successCallback, failCallback);
+            },
+            function () {
+                console.error('create with pdf fail');
+            },
+            function (percentage) {
+                console.log('writing file:', percentage, '%');
+
+                if (typeof writingProgressCallback === 'function') {
+                    writingProgressCallback.call(this, percentage);
+                }
+            }
+        );
     }
 
-    function removePDF() {
+    function updateWithPDF(data, file, successCallback, failCallback, readingProgressCallback, writingProgressCallback) {
+        var filename = data.id + '.pdf';
+        data.filename = filename;
+
+        util.file.writeWithFile(
+            book_list_path,
+            filename,
+            file.files[0],
+            function (uri) {
+                update(data, successCallback, failCallback);
+            },
+            function () {
+                console.error('create with pdf fail');
+            },
+            function (percentage) {
+                console.log('writing file:', percentage, '%');
+
+                if (typeof writingProgressCallback === 'function') {
+                    writingProgressCallback.call(this, percentage);
+                }
+
+            }
+
+        );
+    }
+
+    function removePDF(id, successCallback, failCallback) {
+
+        var index = getBookIndexWithId(id),
+            filename = _books[index].filename;
+        util.file.remove(
+            book_list_path,
+            filename,
+            function (entry) {
+                console.log('remove pdf succ', filename);
+
+                delete _books[index].filename;
+
+                update(
+                    _books[index],
+                    function () {
+                        if (typeof successCallback === 'function') {
+                            successCallback.call(this);
+                        }
+                    },
+                    function () {
+                        console.log('remove pdf fail, update data stage');
+                        if (typeof failCallback === 'function') {
+                            failCallback.call(this);
+                        }
+                    }
+                );
+            },
+            function (error) {
+                console.log('remove pdf fail', filename);
+                if (typeof failCallback === 'function') {
+                    failCallback.call(this);
+                }
+            }
+        );
+    }
+
+    function getBookPath() {
+        return book_list_path;
+    }
+
+    function openPDF(id, successCallback, failCallback) {
+        var index = getBookIndexWithId(id),
+            book = _books[index];
+
+        console.log('try to open file:',book_list_path + book.filename,'it\'s a pdf file');
+        util.pdf.open(
+            book_list_path + book.filename,
+            '',
+            undefined,
+            function (result) {
+                if (typeof successCallback === 'function') {
+                    successCallback.call(this, result);
+                }
+            },
+            function (error) {
+                if (typeof failCallback === 'function') {
+                    failCallback.call(this, error);
+                }
+             }
+        );
+    }
+
+    function getPDFInfo() {
 
     }
 
@@ -166,8 +266,12 @@ define('book_service', ['util'], function (util) {
         set: set,
         remove: remove,
         update: update,
+        updateWithPDF: updateWithPDF,
         create: create,
-        uploadPDF: uploadPDF,
-        removePDF: removePDF
+        createWithPDF: createWithPDF,
+        removePDF: removePDF,
+        getBookPath: getBookPath,
+        openPDF: openPDF,
+        getPDFInfo: getPDFInfo
     };
 });

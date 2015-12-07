@@ -19,11 +19,11 @@
 			<td>{author}</td> !}
 			<td>{isbn}</td>
 			<td>
-				{?link}
-					<button class="preview" name="{id}" link="{link}">Preview</button>
+				{?filename}
+					<button class="preview" name="{id}" filename="{filename}">Preview</button>
 				{:else}
 					None.
-				{/link}
+				{/filename}
 			</td>
 			<td>
 				<button class="delete" name="{id}">Delete</button>

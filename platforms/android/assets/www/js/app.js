@@ -1,19 +1,38 @@
 /* globals define: false, StatusBar: false */
-define('app', ['jquery', 'list', 'form', 'book_service'], function ($, list, form, book_service) {
+define('app', ['jquery', 'list', 'form', 'book_service', 'pdf'], function ($, list, form, book_service, pdf) {
     'use strict';
 
     var $list = $('div.list'),
         $form = $('div.form'),
         $loading = $('div.mask'),
-        _loading_status = false,
+        $progress = $('progress'),
+        $pdf = $('div.pdf'),
+        pdf_mode = false,
         _self = this;
 
     function loading(status) {
-        _loading_status = status;
+        show_progress(false);
         if (status) {
             $loading.show();
         } else {
             $loading.hide();
+        }
+    }
+
+    function show_pdf(status) {
+        pdf_mode = status;
+        if (pdf_mode) {
+            $pdf.show();
+        } else {
+            $pdf.hide();
+        }
+    }
+
+    function show_progress(status, num) {
+        if (status) {
+            $progress.show().val(num);
+        } else {
+            $progress.hide();
         }
     }
 
@@ -55,30 +74,79 @@ define('app', ['jquery', 'list', 'form', 'book_service'], function ($, list, for
             );
         });
 
+        list.eventHandler.onPreviewEvent(function (event, filename) {
+            show_pdf(true);
+            loading(true);
+
+
+            var pdf_path = book_service.getBookPath() + filename;
+            console.log(pdf_path);
+
+            pdf.init(
+                pdf_path,
+                function () {
+                    console.log('open pdf succ');
+                    loading(false);
+                },
+                function () {
+                    console.log('open pdf fail');
+                    loading(false);
+                }
+            );
+        });
+
         list.init();
     }
 
     function initForm() {
-        form.eventHandler.onSaveEvent(function (formData) {
+        form.eventHandler.onSaveEvent(function (formData, file) {
             loading(true);
+            formData.id = (new Date()).getTime();
 
-            formData.id = (new Date).getTime();
-            book_service.create(formData, function () {
-                refresh();
-                loading(false);
-            }, function () {
-                console.error('save book error');
-                refresh();
-                loading(false);
-            });
-            console.log('save book: ');
-            console.dir(formData);
+            if (file.files.length === 0) {
+                book_service.create(formData, function () {
+                    refresh();
+                    loading(false);
+                }, function () {
+                    console.error('save book error');
+                    refresh();
+                    loading(false);
+                });
+            } else {
+                book_service.createWithPDF(
+                    formData,
+                    file,
+                    function () {
+                        refresh();
+                        loading(false);
+                    },
+                    function () {
+                        console.error('save book error');
+                        refresh();
+                        loading(false);
+                    },
+                    function (percentage) {
+                        if (percentage !== 100) {
+                            show_progress(true, percentage);
+                        } else {
+                            show_progress(false);
+                        }
+                    },
+                    function (percentage) {
+                        if (percentage !== 100) {
+                            show_progress(true, percentage);
+                        } else {
+                            show_progress(false);
+                        }
+                    }
+                );
+            }
         });
 
         form.eventHandler.onDeleteEvent(function (formData) {
             loading(true);
 
-            book_service.remove(
+            book_service.removePDF(
                 formData.id,
                 function () {
                     console.log('remove suc');
@@ -93,23 +161,54 @@ define('app', ['jquery', 'list', 'form', 'book_service'], function ($, list, for
             );
         });
 
-        form.eventHandler.onUpdateEvent(function (formData) {
+        form.eventHandler.onUpdateEvent(function (formData, file) {
             loading(true);
 
-            book_service.update(
-                formData.id,
-                formData,
-                function () {
-                    console.log('update suc');
-                    refresh();
-                    loading(false);
-                },
-                function () {
-                    console.log('update fail');
-                    refresh();
-                    loading(false);
-                }
-            );
+            if (file && file.files.length !== 0) {
+                book_service.updateWithPDF(
+                    formData,
+                    file,
+                    function () {
+                        console.log('update with pdf suc');
+                        refresh();
+                        loading(false);
+                    },
+                    function () {
+                        console.log('update with pdf fail');
+                        refresh();
+                        loading(false);
+                    },
+                    function (percentage) {
+                        if (percentage !== 100) {
+                            show_progress(true, percentage);
+                        } else {
+                            show_progress(false);
+                        }
+                    },
+                    function (percentage) {
+                        if (percentage !== 100) {
+                            show_progress(true, percentage);
+                        } else {
+                            show_progress(false);
+                        }
+                    }
+                );
+            } else {
+                book_service.update(
+                    formData,
+                    function () {
+                        console.log('update suc');
+                        refresh();
+                        loading(false);
+                    },
+                    function () {
+                        console.log('update fail');
+                        refresh();
+                        loading(false);
+                    }
+                );
+            }
+
         });
 
         form.eventHandler.onCancelEvent(function () {
@@ -117,13 +216,53 @@ define('app', ['jquery', 'list', 'form', 'book_service'], function ($, list, for
             refresh();
         });
 
+        form.eventHandler.onPreviewEvent(function (formData) {
+            show_pdf(true);
+            loading(true);
+
+            var pdf_path = book_service.getBookPath() + formData.filename;
+            console.log(pdf_path);
+
+            pdf.init(
+                pdf_path,
+                function () {
+                    console.log('open pdf succ');
+                    loading(false);
+                },
+                function () {
+                    console.log('open pdf fail');
+                    loading(false);
+                }
+            );
+        });
+
         form.init();
+    }
+
+    function initPDF() {
+        pdf.eventHandler.onCloseEvent(function () {
+            show_pdf(false);
+        });
+
+        pdf.eventHandler.onNextEvent(function () {
+            loading(false);
+        });
+
+        pdf.eventHandler.onPrevEvent(function () {
+            loading(false);
+        });
+
+        pdf.eventHandler.onPageChangeEvent(function () {
+            loading(true);
+        });
     }
 
     function init() {
         StatusBar.hide();
+        show_pdf(false);
         initList();
         initForm();
+        initPDF();
         refresh();
     }
 

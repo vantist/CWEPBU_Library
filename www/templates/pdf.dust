@@ -1,4 +1,5 @@
-<button name="close">Close</button>
-<canvas name="pdf"></canvas>
-<button name="prev">prev</button>
-<button name="next">next</button>
+<button class="close">Close</button>
+<canvas class="pdf"></canvas>
+<span class="page-info"></span>
+<button class="prev">Prev</button>
+<button class="next">Next</button>

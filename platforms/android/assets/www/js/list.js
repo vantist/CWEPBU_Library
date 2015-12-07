@@ -5,6 +5,7 @@ define('list', ['jquery', 'dustjs'], function ($, dust) {
     var _$list = $('div.list'),
         selectedCallback = function () {},
         deleteCallback = function () {},
+        previewCallback = function () {},
         SELECTED_CLASSNAME = 'selected';
 
 
@@ -33,7 +34,7 @@ define('list', ['jquery', 'dustjs'], function ($, dust) {
 
         _$list.on('touchstart', 'tbody', function (event) {
             var $target = $(event.target),
-                $tr = $target.parent();
+                $tr = $target.parents('tr');
 
             if ($tr.hasClass(SELECTED_CLASSNAME)) {
                 $tr.removeClass(SELECTED_CLASSNAME);
@@ -48,6 +49,10 @@ define('list', ['jquery', 'dustjs'], function ($, dust) {
             var id = Number($(this).attr('name'));
             console.log('list delete button touchend, id: ' + id);
             deleteCallback.call(this, event, id);
+        }).on('touchend', 'button.preview', function (event) {
+            var filename = $(this).attr('filename');
+            console.log('list preview button touchend, filename: ' + filename);
+            previewCallback.call(this, event, filename);
         });
     }
 
@@ -67,12 +72,19 @@ define('list', ['jquery', 'dustjs'], function ($, dust) {
         $(_$list.find('.selected')).removeClass('selected');
     }
 
+    function onPreviewEvent(callback) {
+        if (typeof callback === 'function') {
+            previewCallback = callback;
+        }
+    }
+
     return {
         init: init,
         render: render,
         eventHandler: {
             onSelectedEvent: onSelectedEvent,
-            onDeleteEvent: onDeleteEvent
+            onDeleteEvent: onDeleteEvent,
+            onPreviewEvent: onPreviewEvent
         },
         clearSelected: clearSelected
     };

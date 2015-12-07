@@ -1,7 +1,21 @@
-/* globals define: false, FileTransfer: false, PDFRenderer: false, cordova: false, resolveLocalFileSystemURL: false */
+/* globals define: false, FileTransfer: false, PDFRenderer: false,
+cordova: false, resolveLocalFileSystemURL: false, Blob: false */
 define('util', [], function () {
     'use strict';
     var fileTransfer = new FileTransfer();
+
+    function checkDirectory(path, callback) {
+        getDirectoryEntry(
+            path, {
+                create: true
+            },
+            function () {
+                if (typeof callback === 'function') {
+                    callback.call(this);
+                }
+            }
+        );
+    }
 
     function toInternalURL(fileURL, successCallback) {
         resolveLocalFileSystemURL(fileURL, function (entry) {
@@ -13,7 +27,19 @@ define('util', [], function () {
         });
     }
 
-    function getEntry(path, file_name, option, callback) {
+    function getDirectoryEntry(path, option, callback) {
+        resolveLocalFileSystemURL(path, function (dir) {
+            option = option || {};
+            dir.getDirectory('', option, function (entry) {
+                if (typeof callback === 'function') {
+                    callback.call(this, entry);
+                }
+            });
+        });
+    }
+
+
+    function getFileEntry(path, file_name, option, callback) {
         resolveLocalFileSystemURL(path, function (dir) {
             option = option || {};
             dir.getFile(file_name, option, function (entry) {
@@ -25,83 +51,144 @@ define('util', [], function () {
     }
 
     function read(path, file_name, successCallback, failCallback) {
-        getEntry(
-            path,
-            file_name, { 
-                create: true
-            }, function (entry) {
-                entry.file(function (file) {
-                    var reader = new FileReader();
+        checkDirectory(path, function () {
+            getFileEntry(
+                path,
+                file_name, {
+                    create: true
+                },
+                function (entry) {
+                    entry.file(function (file) {
+                        var reader = new FileReader();
 
-                    reader.onloadend = function (e) {
-                        console.log(this.result);
+                        reader.onloadend = function (e) {
+                            var result = [];
 
-                        if (typeof successCallback === 'function') {
-                            successCallback.call(this, JSON.parse(this.result));
+                            if (this.result) {
+                                result = JSON.parse(this.result);
+                            }
+
+                            if (typeof successCallback === 'function') {
+                                successCallback.call(this, result);
+                            }
+                        };
+
+                        reader.readAsText(file);
+                    }, function (error) {
+                        console.error(error);
+
+                        if (typeof failCallback === 'function') {
+                            failCallback.call(this, error);
                         }
-                    }
-
-                    reader.readAsText(file);
-                }, function (error) {
-                    console.error(error);
-
-                    if (typeof failCallback === 'function') {
-                        failCallback.call(this, error);
-                    }
-                });
-            }
-        );
+                    });
+                }
+            );
+        });
     }
 
     function write(path, file_name, data, writeendCallback, failCallback) {
-        getEntry(
-            path,
-            file_name, { 
-                create: true 
-            }, function (entry) {
-                entry.createWriter(function (fileWriter) {
-                    if (typeof failCallback === 'function') {
-                        fileWriter.onerror = failCallback;
-                    }
+        checkDirectory(path, function () {
+            getFileEntry(
+                path,
+                file_name, {
+                    create: true
+                },
+                function (entry) {
+                    entry.createWriter(function (fileWriter) {
+                        var blob = new Blob([JSON.stringify(data)], {
+                            type: 'text/plain'
+                        });
 
-                    if (typeof writeendCallback === 'function') {
-                        fileWriter.onwriteend = writeendCallback;
-                    }
+                        if (typeof failCallback === 'function') {
+                            fileWriter.onerror = failCallback;
+                        }
 
-                    fileWriter.seek(fileWriter.length);
+                        fileWriter.onwriteend = function () {
+                            if (fileWriter.length === 0) {
+                                fileWriter.write(blob);
+                            } else {
+                                if (typeof writeendCallback === 'function') {
+                                    writeendCallback.call(this);
+                                }
+                            }
+                        };
 
-                    var blob = new Blob([JSON.stringify(data)], {
-                        type: 'text/plain'
+                        fileWriter.truncate(0);
                     });
+                }
+            );
+        });
+    }
 
-                    fileWriter.write(blob);
-                });
-            }
-        );
+    function writeWithFile(path, file_name, file, writeendCallback, failCallback, writerProgressCallback) {
+        var startTime = (new Date()).getTime();
+
+        checkDirectory(path, function () {
+            getFileEntry(
+                path,
+                file_name, {
+                    create: true
+                },
+                function (entry) {
+                    entry.createWriter(function (fileWriter) {
+                        var blob = file.slice(0, file.size);
+
+                        if (typeof failCallback === 'function') {
+                            fileWriter.onerror = failCallback;
+                        }
+
+                        fileWriter.onprogress = function (event) {
+                            console.log('on file writer progress');
+                            var percentage = Math.round((event.loaded * 100) / event.total);
+
+                            if (typeof writerProgressCallback === 'function') {
+                                writerProgressCallback.call(this, percentage);
+                            }
+                        };
+
+                        fileWriter.onwriteend = function () {
+                            if (fileWriter.length === 0) {
+                                fileWriter.write(blob);
+                            } else {
+                                if (typeof writeendCallback === 'function') {
+                                    writeendCallback.call(this, entry.toURI());
+                                    console.log('write time:', (new Date()).getTime() - startTime, 'ms');
+                                }
+                            }
+                        };
+
+                        fileWriter.truncate(0);
+                    });
+                }
+            );
+        });
     }
 
     function remove(path, file_name, successCallback, failCallback) {
-        getEntry(
-            path,
-            file_name, {
-                create: false,
-                exclusive: false
-            }, function (entry) {
-                entry.remove(function (entry) {
-                    console.log("Removal succeeded");
+        checkDirectory(path, function () {
+            getFileEntry(
+                path,
+                file_name, {
+                    create: false,
+                    exclusive: false
+                },
+                function (entry) {
+                    entry.remove(function (entry) {
+                        console.log("Removal succeeded");
 
-                    if (typeof successCallback === 'function') {
-                        successCallback.call(this, entry);
-                    }
-                }, function (error) {
-                    console.error("Error removing file: " + error.code);
+                        if (typeof successCallback === 'function') {
+                            successCallback.call(this, entry);
+                        }
+                    }, function (error) {
+                        console.error("Error removing file: " + error.code);
 
-                    if (typeof failCallback === 'function') {
-                        failCallback.call(this, error);
-                    }
-                });
-            }
-        );
+                        if (typeof failCallback === 'function') {
+                            failCallback.call(this, error);
+                        }
+                    });
+                }
+            );
+        });
     }
 
     function download(uri, fileURL, successCallback, failCallback) {
@@ -119,7 +206,6 @@ define('util', [], function () {
             }
         });
     }
-
 
     function downloadWithURL(uri, fileURL, successCallback, failCallback) {
         download(encodeURI(uri), fileURL, successCallback, failCallback);
@@ -155,7 +241,7 @@ define('util', [], function () {
 
     function openWithPDF(uri, password, preference, successCallback, failCallback) {
         var option = {
-            content: uri,
+            content: uri.replace(/^file:\/+/, "\/"),
             password: password,
             openType: PDFRenderer.OpenType.PATH
         };
@@ -232,10 +318,10 @@ define('util', [], function () {
         };
 
         PDFRenderer.getPage(function (result) {
-            console.log('FILE_URL: ' + result);
+            console.log('Orig FILE_URL: ' + result);
 
             if (typeof successCallback === 'function') {
-                successCallback.call(this, result);
+                successCallback.call(this, 'file://' + result);
             }
         }, function (error) {
             console.error(error);
@@ -268,10 +354,11 @@ define('util', [], function () {
             openWithNative: openWithNative,
             toInternalURL: toInternalURL,
             fileTransferProgressCallback: fileTransferProgressCallback,
-            getEntry: getEntry,
+            getFileEntry: getFileEntry,
             read: read,
             write: write,
-            remove: remove
+            remove: remove,
+            writeWithFile: writeWithFile
         },
         pdf: {
             open: openWithPDF,

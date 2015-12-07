@@ -12,7 +12,8 @@ require.config({
         list: 'js/list',
         form: 'js/form',
         util: 'js/util',
-        book_service: 'js/book_service'
+        book_service: 'js/book_service',
+        pdf: 'js/pdf'
     },
     shim: {
         jquery: {

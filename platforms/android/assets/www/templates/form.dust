@@ -14,7 +14,7 @@
 	</select><br/>
 	Author: <input type="text" name="author"/><br/> !}
 	ISBN: <input type="text" name="isbn"/><br/>
-	Upload file: <input type="file"/><br/>
+	Upload file: <input type="file" accept="application/pdf" /><br/>
 	<button name="save">Save</button>
 	<button name="clear">Clear</button>
 {:else}
@@ -34,13 +34,14 @@
 		</select><br/>
 		Author: <input type="text" name="author" value="{author}"/><br/> !}
 		ISBN: <input type="text" name="isbn" value="{isbn}"/><br/>
-		{?link}
+		{?filename}
 			File: 
+			<input type="hidden" name="filename" value="{filename}" />
 			<button name="preview">Preview</button>
 			<button name="delete">Delete</button><br/>
 		{:else}
-			Upload file: <input type="file"/><button name="update">Upload</button><br/>
-		{/link}
+			Upload file: <input type="file" accept="application/pdf" /><br/>
+		{/filename}
 		<button name="update">Update</button>
 		<button name="cancel">Cancel</button>
 	{/book}
