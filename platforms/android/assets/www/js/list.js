@@ -1,90 +1,97 @@
 /* globals define: false */
-define('list', ['jquery', 'dustjs'], function ($, dust) {
+define('list', ['jquery', 'configured_dust', 'debug'], function ($, dust, debug) {
     'use strict';
 
-    var _$list = $('div.list'),
-        selectedCallback = function () {},
-        deleteCallback = function () {},
-        previewCallback = function () {},
-        SELECTED_CLASSNAME = 'selected';
+    var _$list,
+        _selectedCallback = function () {},
+        _deleteCallback = function () {},
+        _previewCallback = function () {},
+        _alwaysCallback = function () {},
+        SELECTED_CLASSNAME = 'selected',
+        LIST_TEMPLATE = 'list';
 
 
-    function init() {
+    function init($e) {
+        _$list = $e;
         render();
         bindEvent();
     }
 
-    /**
-     * @param  {jquery object} render target
-     * @param  {json data} template source data
-     */
-    function render($list, data) {
-        $list = $list || _$list;
-        dust.render('list', data, function (err, out) {
+    function render(data) {
+        dust.render(LIST_TEMPLATE, data, function dustRenderList(err, out) {
             if (err) {
-                console.error(err);
+                debug.error(err);
             } else {
-                $list.empty().append(out);
+                _$list.empty().append(out);
             }
         });
     }
 
     function bindEvent() {
-        // var _$tr = $(_$list.find('tbody tr'));
-
-        _$list.on('touchstart', 'tbody', function (event) {
+        _$list.on('touchstart', 'tbody', function onListTouchStart(event) {
             var $target = $(event.target),
-                $tr = $target.parents('tr');
+                $tr = $target.parents('tr'),
+                id = Number($tr.attr('name'));
+
+            _alwaysCallback.call(this);
 
             if ($tr.hasClass(SELECTED_CLASSNAME)) {
-                $tr.removeClass(SELECTED_CLASSNAME);
-                selectedCallback.call(this, event, -1);
+                id = -1;
             } else {
-                $tr.addClass(SELECTED_CLASSNAME);
-                $tr.siblings().removeClass(SELECTED_CLASSNAME);
-
-                selectedCallback.call(this, event, Number($tr.attr('idx')));
+                clearSelected();
             }
-        }).on('touchend', 'button.delete', function (event) {
+
+            $tr.toggleClass(SELECTED_CLASSNAME);
+            _selectedCallback.call(this, id);
+        }).on('touchend', 'button.delete', function onDeleteButtonTouchend() {
             var id = Number($(this).attr('name'));
-            console.log('list delete button touchend, id: ' + id);
-            deleteCallback.call(this, event, id);
-        }).on('touchend', 'button.preview', function (event) {
-            var filename = $(this).attr('filename');
-            console.log('list preview button touchend, filename: ' + filename);
-            previewCallback.call(this, event, filename);
+
+            _alwaysCallback.call(this);
+            _deleteCallback.call(this, id);
+        }).on('touchend', 'button.preview', function onPreivewButtonTouchend() {
+            var id = Number($(this).attr('name'));
+
+            _alwaysCallback.call(this);
+            _previewCallback.call(this, id);
         });
     }
 
-    function onSelectedEvent(callback) {
+    function addSelectedEventListener(callback) {
         if (typeof callback === 'function') {
-            selectedCallback = callback;
+            _selectedCallback = callback;
         }
     }
 
-    function onDeleteEvent(callback) {
+    function addDeleteEventListener(callback) {
         if (typeof callback === 'function') {
-            deleteCallback = callback;
+            _deleteCallback = callback;
+        }
+    }
+
+    function addPreviewEventListener(callback) {
+        if (typeof callback === 'function') {
+            _previewCallback = callback;
+        }
+    }
+
+    function addAlwaysEventListener(callback) {
+        if (typeof callback === 'function') {
+            _alwaysCallback = callback;
         }
     }
 
     function clearSelected() {
-        $(_$list.find('.selected')).removeClass('selected');
-    }
-
-    function onPreviewEvent(callback) {
-        if (typeof callback === 'function') {
-            previewCallback = callback;
-        }
+        _$list.find('.' + SELECTED_CLASSNAME).removeClass(SELECTED_CLASSNAME);
     }
 
     return {
         init: init,
         render: render,
         eventHandler: {
-            onSelectedEvent: onSelectedEvent,
-            onDeleteEvent: onDeleteEvent,
-            onPreviewEvent: onPreviewEvent
+            addSelectedEventListener: addSelectedEventListener,
+            addDeleteEventListener: addDeleteEventListener,
+            addPreviewEventListener: addPreviewEventListener,
+            addAlwaysEventListener: addAlwaysEventListener
         },
         clearSelected: clearSelected
     };

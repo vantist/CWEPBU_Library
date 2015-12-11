@@ -1,6 +1,6 @@
-Node version: v5.1.0
+Node version: v5.2.0
 
-Cordova version: 5.4.0
+Cordova version: 5.4.1
 
 Config.xml file: 
 
@@ -88,6 +88,7 @@ Config.xml file:
         <allow-intent href="itms-apps:*" />
     </platform>
     <engine name="android" spec="~4.1.1" />
+    <engine name="ios" spec="~3.9.2" />
 </widget>
 
 
@@ -96,4 +97,9 @@ Plugins:
 com.gss.pdfrenderer,cordova-plugin-console,cordova-plugin-file,cordova-plugin-file-opener2,cordova-plugin-file-transfer,cordova-plugin-globalization,cordova-plugin-network-information,cordova-plugin-statusbar,cordova-plugin-whitelist
 
 Error retrieving Android platform information: Error: android: Command failed with exit code ENOENT
+
+iOS platform:
+
+Xcode 7.2
+Build version 7C68
 

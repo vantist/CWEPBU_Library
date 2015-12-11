@@ -3,3 +3,4 @@
 <span class="page-info"></span>
 <button class="prev">Prev</button>
 <button class="next">Next</button>
+<div class="image-pool"></div>

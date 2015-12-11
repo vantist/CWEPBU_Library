@@ -1,35 +1,36 @@
 /* globals define: false */
-define('pdf', ['jquery', 'dustjs', 'util'], function ($, dust, util) {
+define('pdf', ['jquery', 'configured_dust', 'util', 'debug'], function ($, dust, util, debug) {
     'use strict';
 
-    var _$element = $('div.pdf'),
+    var _$pdf = $('div.pdf'),
         _$image_pool = $('div.image-pool'),
-        _width = _$element.width(),
-        _height = _$element.height(),
-        _pdf_path = '',
+        _$page_info,
+        _canvas,
+        _canvas_context,
+        _width = _$pdf.width(),
+        _height = _$pdf.height(),
         _info = {},
         _current_page = 1,
-        closeCallback = function () {},
-        nextCallback = function () {},
-        prevCallback = function () {},
-        pageChangeCallback = function () {};
-
-    console.log('pdf width', _width);
-    console.log('pdf height', _height);
+        _closeCallback = function () {},
+        _nextCallback = function () {},
+        _prevCallback = function () {},
+        _pageChangeCallback = function () {};
 
     function init(path, successCallback, failCallback) {
         render(function () {
             _current_page = 1;
-            var canvas = _$element.find('canvas')[0];
-            canvas.width = _width,
-            canvas.height = _height;
+            _canvas = _$pdf.find('canvas')[0];
+            _canvas.width = _width;
+            _canvas.height = _height;
+            _canvas_context = _canvas.getContext('2d');
+            _$page_info = _$pdf.find('.page-info');
 
             util.pdf.open(
-                path.replace(/^file:\/+/, "\/"),
+                path.replace(/^file:\/+/, '\/'),
                 '',
                 undefined,
-                function (result) {
-                    console.log('pdf suc');
+                function () {
+                    debug.log('pdf suc');
 
                     getInfo(
                         function () {
@@ -46,13 +47,13 @@ define('pdf', ['jquery', 'dustjs', 'util'], function ($, dust, util) {
                     );
                 },
                 function (error) {
-                    console.log('pdf error');
+                    debug.log('pdf error');
 
                     if (typeof failCallback === 'function') {
                         failCallback.call(this, error);
                     }
                 }
-            )
+            );
         });
     }
 
@@ -73,16 +74,42 @@ define('pdf', ['jquery', 'dustjs', 'util'], function ($, dust, util) {
         );
     }
 
-    function draw(image) {
-        var canvas = _$element.find('canvas')[0],
-            context = canvas.getContext("2d"),
-            $page_info = _$element.find('.page-info'),
-            scaleHeight = image.height * _width / image.width,
-            top = (_height - scaleHeight) / 2;
+    function adjustImage(image) {
+        var WIDTH = 0,
+            HEIGHT = 1,
+            fixedBorder = (image.width > image.height) ? WIDTH : HEIGHT,
+            adjustedImage = {
+                top: 0,
+                left: 0,
+                width: _width,
+                height: _height
+            };
 
-        context.clearRect(0, 0, _width, _height);
-        context.drawImage(image, 0, top, _width, scaleHeight);
-        $page_info.text(_current_page + '/' + _info.numberOfPage);
+        switch (fixedBorder) {
+        case WIDTH:
+            adjustedImage.height = image.height * _width / image.width;
+            adjustedImage.top = (_height - adjustedImage.height) / 2;
+            break;
+        case HEIGHT:
+            adjustedImage.width = image.width * _height / image.height;
+            adjustedImage.left = (_width - adjustedImage.width) / 2;
+            break;
+        }
+
+        return adjustedImage;
+    }
+
+    // canvas draw image from image element
+    function draw(image) {
+        var adjustedImage = adjustImage(image);
+
+        _canvas_context.clearRect(0, 0, _width, _height);
+        _canvas_context.drawImage(image, adjustedImage.left, adjustedImage.top, adjustedImage.width, adjustedImage.height);
+        renderPageInfo();
+    }
+
+    function renderPageInfo() {
+        _$page_info.text(_current_page + '/' + _info.numberOfPage);
     }
 
     function show(callback) {
@@ -154,16 +181,16 @@ define('pdf', ['jquery', 'dustjs', 'util'], function ($, dust, util) {
     }
 
     function render(successCallback, failCallback) {
-        _$element.empty();
+        _$pdf.empty();
         dust.render('pdf', {}, function (err, out) {
             if (err) {
-                console.error(err);
+                debug.error(err);
 
                 if (typeof failCallback === 'function') {
                     failCallback.call(this);
                 }
             } else {
-                _$element.append(out);
+                _$pdf.append(out);
 
                 if (typeof successCallback === 'function') {
                     successCallback.call(this);
@@ -196,56 +223,50 @@ define('pdf', ['jquery', 'dustjs', 'util'], function ($, dust, util) {
         });
     }
 
-    function onCloseEvent(callback) {
-        if (typeof closeCallback === 'function') {
-            closeCallback = callback;
+    function addCloseEventListener(callback) {
+        if (typeof _closeCallback === 'function') {
+            _closeCallback = callback;
         }
     }
 
-    function onNextEvent(callback) {
-        if (typeof nextCallback === 'function') {
-            nextCallback = callback;
+    function addNextEventListener(callback) {
+        if (typeof _nextCallback === 'function') {
+            _nextCallback = callback;
         }
     }
 
-    function onPrevEvent(callback) {
-        if (typeof prevCallback === 'function') {
-            prevCallback = callback;
+    function addPrevEventListener(callback) {
+        if (typeof _prevCallback === 'function') {
+            _prevCallback = callback;
         }
     }
 
-    function onPageChangeEvent(callback) {
-        if (typeof pageChangeCallback === 'function') {
-            pageChangeCallback = callback;
+    function addPageChangeEventListener(callback) {
+        if (typeof _pageChangeCallback === 'function') {
+            _pageChangeCallback = callback;
         }
     }
 
     function bindEvent() {
-        _$element.on('touchend', 'button.close', function () {
+        _$pdf.on('touchend', 'button.close', function pdfCloseButtonTouchend() {
             close();
-            closeCallback.call(this);
-        }).on('touchend', 'button.prev', function () {
-            pageChangeCallback.call(this);
+            _closeCallback.call(this);
+        }).on('touchend', 'button.prev', function pdfPrevButtonTouchend() {
+            _pageChangeCallback.call(this);
+
             prev(function () {
-                prevCallback.call(this);
+                _prevCallback.call(this);
             });
-        }).on('touchend', 'button.next', function () {
-            pageChangeCallback.call(this);
+        }).on('touchend', 'button.next', function pdfNextButtonTouchend() {
+            _pageChangeCallback.call(this);
+
             next(function () {
-                nextCallback.call(this);
+                _nextCallback.call(this);
             });
         });
     }
 
     bindEvent();
-
-    function auto() {
-        next(function () {
-            if (_current_page !== 349) {
-                auto();
-            }
-        });
-    }
 
     return {
         init: init,
@@ -253,11 +274,10 @@ define('pdf', ['jquery', 'dustjs', 'util'], function ($, dust, util) {
         next: next,
         prev: prev,
         eventHandler: {
-            onCloseEvent: onCloseEvent,
-            onNextEvent: onNextEvent,
-            onPrevEvent: onPrevEvent,
-            onPageChangeEvent: onPageChangeEvent
-        },
-        auto: auto
+            addCloseEventListener: addCloseEventListener,
+            addNextEventListener: addNextEventListener,
+            addPrevEventListener: addPrevEventListener,
+            addPageChangeEventListener: addPageChangeEventListener
+        }
     };
 });

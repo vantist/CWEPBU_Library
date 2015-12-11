@@ -1,19 +1,22 @@
-/* globals require: false, StatusBar: false */
+/* globals
+require
+*/
 require.config({
     baseUrl: '',
     paths: {
         // library
         jquery: 'bower_components/jquery/dist/jquery.min',
-        dust: 'bower_components/dustjs-linkedin/dist/dust-full.min',
+        dust: 'bower_components/configured_dust-linkedin/dist/dust-full.min',
 
         // module
-        dustjs: 'js/dust_config',
+        configured_dust: 'js/configured_dust',
         app: 'js/app',
         list: 'js/list',
         form: 'js/form',
         util: 'js/util',
         book_service: 'js/book_service',
-        pdf: 'js/pdf'
+        pdf: 'js/pdf',
+        dubug: 'js/dubug'
     },
     shim: {
         jquery: {
@@ -25,13 +28,13 @@ require.config({
             exports: 'dust'
         }
     },
-    urlArgs: "bust=" + (new Date()).getTime()
+    urlArgs: 'bust=' + new Date().getTime()
 });
 
 require(['jquery', 'app'], function ($, app) {
     'use strict';
 
-    $(document).ready(function () {
+    $(document).ready(function onDucomentReady() {
         app.init();
     });
 });

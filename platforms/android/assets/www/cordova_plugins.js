@@ -1,17 +1,19 @@
 cordova.define('cordova/plugin_list', function(require, exports, module) {
 module.exports = [
     {
-        "file": "plugins/cordova-plugin-whitelist/whitelist.js",
-        "id": "cordova-plugin-whitelist.whitelist",
-        "pluginId": "cordova-plugin-whitelist",
-        "runs": true
+        "file": "plugins/com.gss.pdfrenderer/www/PDFRendererConstants.js",
+        "id": "com.gss.pdfrenderer.PDFRendererConstants",
+        "pluginId": "com.gss.pdfrenderer",
+        "clobbers": [
+            "PDFRenderer"
+        ]
     },
     {
-        "file": "plugins/cordova-plugin-file-opener2/www/plugins.FileOpener2.js",
-        "id": "cordova-plugin-file-opener2.FileOpener2",
-        "pluginId": "cordova-plugin-file-opener2",
-        "clobbers": [
-            "cordova.plugins.fileOpener2"
+        "file": "plugins/com.gss.pdfrenderer/www/PDFRenderer.js",
+        "id": "com.gss.pdfrenderer.PDFRenderer",
+        "pluginId": "com.gss.pdfrenderer",
+        "merges": [
+            "PDFRenderer"
         ]
     },
     {
@@ -198,6 +200,14 @@ module.exports = [
         "runs": true
     },
     {
+        "file": "plugins/cordova-plugin-file-opener2/www/plugins.FileOpener2.js",
+        "id": "cordova-plugin-file-opener2.FileOpener2",
+        "pluginId": "cordova-plugin-file-opener2",
+        "clobbers": [
+            "cordova.plugins.fileOpener2"
+        ]
+    },
+    {
         "file": "plugins/cordova-plugin-file-transfer/www/FileTransferError.js",
         "id": "cordova-plugin-file-transfer.FileTransferError",
         "pluginId": "cordova-plugin-file-transfer",
@@ -255,24 +265,24 @@ module.exports = [
         ]
     },
     {
-        "file": "plugins/com.gss.pdfrenderer/www/PDFRendererConstants.js",
-        "id": "com.gss.pdfrenderer.PDFRendererConstants",
-        "pluginId": "com.gss.pdfrenderer",
-        "clobbers": [
-            "PDFRenderer"
-        ]
-    },
-    {
-        "file": "plugins/com.gss.pdfrenderer/www/PDFRenderer.js",
-        "id": "com.gss.pdfrenderer.PDFRenderer",
-        "pluginId": "com.gss.pdfrenderer",
-        "merges": [
-            "PDFRenderer"
-        ]
+        "file": "plugins/cordova-plugin-whitelist/whitelist.js",
+        "id": "cordova-plugin-whitelist.whitelist",
+        "pluginId": "cordova-plugin-whitelist",
+        "runs": true
     }
 ];
 module.exports.metadata = 
 // TOP OF METADATA
-{}
+{
+    "com.gss.pdfrenderer": "0.0.6-dev",
+    "cordova-plugin-console": "1.0.1",
+    "cordova-plugin-file": "3.0.0",
+    "cordova-plugin-file-opener2": "2.0.1",
+    "cordova-plugin-file-transfer": "1.3.0",
+    "cordova-plugin-globalization": "1.0.1",
+    "cordova-plugin-network-information": "1.0.1",
+    "cordova-plugin-statusbar": "1.0.1",
+    "cordova-plugin-whitelist": "1.0.0"
+}
 // BOTTOM OF METADATA
 });

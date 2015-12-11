@@ -1,5 +1,12 @@
-/* globals define: false, FileTransfer: false, PDFRenderer: false,
-cordova: false, resolveLocalFileSystemURL: false, Blob: false */
+/* globals
+define,
+FileTransfer,
+PDFRenderer,
+cordova,
+resolveLocalFileSystemURL,
+Blob,
+console
+*/
 define('util', [], function () {
     'use strict';
     var fileTransfer = new FileTransfer();
@@ -50,40 +57,39 @@ define('util', [], function () {
         });
     }
 
-    function read(path, file_name, successCallback, failCallback) {
-        checkDirectory(path, function () {
-            getFileEntry(
-                path,
-                file_name, {
-                    create: true
-                },
-                function (entry) {
-                    entry.file(function (file) {
-                        var reader = new FileReader();
+    function read(path, file_name) {
+        var promise = new Promise(function (resolve, reject) {
+            checkDirectory(path, function () {
+                getFileEntry(
+                    path,
+                    file_name, {
+                        create: true
+                    },
+                    function (entry) {
+                        entry.file(function (file) {
+                            var reader = new FileReader();
 
-                        reader.onloadend = function (e) {
-                            var result = [];
+                            reader.onloadend = function (e) {
+                                var result = [];
 
-                            if (this.result) {
-                                result = JSON.parse(this.result);
-                            }
+                                if (this.result) {
+                                    result = JSON.parse(this.result);
+                                }
 
-                            if (typeof successCallback === 'function') {
-                                successCallback.call(this, result);
-                            }
-                        };
+                                resolve(result);
+                            };
 
-                        reader.readAsText(file);
-                    }, function (error) {
-                        console.error(error);
-
-                        if (typeof failCallback === 'function') {
-                            failCallback.call(this, error);
-                        }
-                    });
-                }
-            );
+                            reader.readAsText(file);
+                        }, function (error) {
+                            console.error(error);
+                            reject(error);
+                        });
+                    }
+                );
+            });
         });
+
+        return promise;
     }
 
     function write(path, file_name, data, writeendCallback, failCallback) {
@@ -120,7 +126,7 @@ define('util', [], function () {
         });
     }
 
-    function writeWithFile(path, file_name, file, writeendCallback, failCallback, writerProgressCallback) {
+    function writeWithFile(path, file_name, file, writeendCallback, failCallback) {
         var startTime = (new Date()).getTime();
 
         checkDirectory(path, function () {
@@ -136,15 +142,6 @@ define('util', [], function () {
                         if (typeof failCallback === 'function') {
                             fileWriter.onerror = failCallback;
                         }
-
-                        fileWriter.onprogress = function (event) {
-                            console.log('on file writer progress');
-                            var percentage = Math.round((event.loaded * 100) / event.total);
-
-                            if (typeof writerProgressCallback === 'function') {
-                                writerProgressCallback.call(this, percentage);
-                            }
-                        };
 
                         fileWriter.onwriteend = function () {
                             if (fileWriter.length === 0) {
@@ -332,20 +329,6 @@ define('util', [], function () {
         }, option);
     }
 
-    function fileTransferProgressCallback(callback) {
-        fileTransfer.onprogress = function (progressEvent) {
-            if (progressEvent.lengthComputable) {
-                console.log(progressEvent.loaded / progressEvent.total);
-            } else {
-                console.log('progress +++');
-            }
-
-            if (typeof callback === 'function') {
-                callback.call(this, progressEvent);
-            }
-        };
-    }
-
     return {
         file: {
             download: download,
@@ -353,7 +336,6 @@ define('util', [], function () {
             downloadWithURL: downloadWithURL,
             openWithNative: openWithNative,
             toInternalURL: toInternalURL,
-            fileTransferProgressCallback: fileTransferProgressCallback,
             getFileEntry: getFileEntry,
             read: read,
             write: write,

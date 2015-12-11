@@ -1,34 +1,30 @@
 <table>
-	<thead>
-		<tr>
-			<th>#</th>
-			<th>Title</th>
-{! 			<th>Category</th>
-			<th>Author</th> !}
-			<th>ISBN</th>
-			<th>File</th>
-			<th></th>
-		</tr>
-	</thead>
-	<tbody>
-		{#.}
-		<tr idx="{$idx}">
-			<td>{$idx}</td>
-			<td>{title}</td>
-{! 			<td>{category}</td>
-			<td>{author}</td> !}
-			<td>{isbn}</td>
-			<td>
-				{?filename}
-					<button class="preview" name="{id}" filename="{filename}">Preview</button>
-				{:else}
-					None.
-				{/filename}
-			</td>
-			<td>
-				<button class="delete" name="{id}">Delete</button>
-			</td>
-		</tr>
-		{/.}
-	</tbody>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Title</th>
+            <th>ISBN</th>
+            <th>File</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {#.}
+            <tr idx="{$idx}" name="{id}">
+                <td>{$idx}</td>
+                <td>{title}</td>
+                <td>{isbn}</td>
+                <td>
+                    {?filename}
+                        <button class="preview" name="{id}" filename="{filename}">Preview</button>
+                    {:else}
+                        None.
+                    {/filename}
+                </td>
+                <td>
+                    <button class="delete" name="{id}">Delete</button>
+                </td>
+            </tr>
+        {/.}
+    </tbody>
 </table>
