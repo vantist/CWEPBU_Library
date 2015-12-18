@@ -1,0 +1,7 @@
+<h3>Create mode</h3>
+<input type="hidden" name="id"/>
+Title: <input type="text" name="title"><br/>
+ISBN: <input type="text" name="isbn"/><br/>
+Upload file: <input type="file" accept="application/pdf" /><br/>
+<button name="save">Save</button>
+<button name="clear">Clear</button>

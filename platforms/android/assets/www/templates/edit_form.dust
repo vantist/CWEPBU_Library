@@ -1,0 +1,14 @@
+<h3>Edit mode</h3>
+<input type="hidden" name="id" value="{id}"/>
+Title: <input type="text" name="title" value="{title}"><br/>
+ISBN: <input type="text" name="isbn" value="{isbn}"/><br/>
+{?filename}
+    File: 
+    <input type="hidden" name="filename" value="{filename}" />
+    <button name="preview">Preview</button>
+    <button name="delete">Delete</button><br/>
+{:else}
+    Upload file: <input type="file" accept="application/pdf" /><br/>
+{/filename}
+<button name="update">Update</button>
+<button name="cancel">Cancel</button>

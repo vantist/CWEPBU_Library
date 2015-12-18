@@ -6,7 +6,7 @@
 .pdf {
   position: fixed;
   width: 100%;
-  display: block;
+  display: none;
   height: 100%;
   top: 0;
   left: 0;
@@ -85,17 +85,6 @@ div.mask {
   left: 0;
   background-color: rgba(14, 14, 14, 0.5);
   z-index: 999;
-}
-
-.progress {
-  position: relative;
-  width: 80%;
-  top: calc(100%/1.8);
-  margin: 0 auto;
-}
-
-progress {
-  width: 100%;
 }
 
 .spinner {

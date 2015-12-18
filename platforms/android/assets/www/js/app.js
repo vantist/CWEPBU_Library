@@ -1,269 +1,157 @@
-/* globals define: false, StatusBar: false */
-define('app', ['jquery', 'list', 'form', 'book_service', 'pdf'], function ($, list, form, book_service, pdf) {
+/* globals
+define,
+StatusBar
+*/
+define('app', ['jquery', 'list_controller', 'form_controller', 'book_service', 'pdf_controller', 'debug', 'loading_mask_controller'], function ($, ListController, FormController, BookService, PDFController, Debug, LoadingMaskController) {
     'use strict';
 
-    var $list = $('div.list'),
-        $form = $('div.form'),
-        $loading = $('div.mask'),
-        $progress = $('progress'),
-        $pdf = $('div.pdf'),
-        pdf_mode = false,
-        _self = this;
-
-    function loading(status) {
-        show_progress(false);
-        if (status) {
-            $loading.show();
-        } else {
-            $loading.hide();
-        }
-    }
-
-    function show_pdf(status) {
-        pdf_mode = status;
-        if (pdf_mode) {
-            $pdf.show();
-        } else {
-            $pdf.hide();
-        }
-    }
-
-    function show_progress(status, num) {
-        if (status) {
-            $progress.show().val(num);
-        } else {
-            $progress.hide();
-        }
-    }
+    var _$list = $('div.list'),
+        _$form = $('div.form'),
+        _$pdf = $('div.pdf'),
+        _$loading = $('div.mask');
 
     function refresh() {
-        loading(true);
-        book_service.fetch(function (books) {
-            list.render($list, books, form.CREATE_MODE);
-            form.refresh();
-            loading(false);
-        });
+        ListController.render(BookService.get());
+        FormController.render();
+        LoadingMaskController.hide();
     }
 
     function initList() {
-        list.eventHandler.onSelectedEvent(function (event, index) {
-            var books = book_service.get();
-
-            if (index >= 0) {
-                form.render(undefined, books[index], form.EDIT_MODE);
-            } else {
-                form.refresh();
-            }
+        ListController.eventHandler.addAlwaysEventListener(function () {
+            LoadingMaskController.show();
         });
 
-        list.eventHandler.onDeleteEvent(function (event, id) {
-            loading(true);
+        ListController.eventHandler.addSelectedEventListener(function (id) {
+            var books = BookService.get(),
+                index = BookService.indexOfById(id),
+                book = (index !== -1) ? books[index] : undefined;
 
-            book_service.remove(
-                id,
-                function () {
-                    loading(false);
-                    console.log('delete suc');
-                    refresh();
-                },
-                function () {
-                    loading(false);
-                    console.log('delete fail');
-                    refresh();
-                }
-            );
+            FormController.render(book);
+            LoadingMaskController.hide();
         });
 
-        list.eventHandler.onPreviewEvent(function (event, filename) {
-            show_pdf(true);
-            loading(true);
-
-
-            var pdf_path = book_service.getBookPath() + filename;
-            console.log(pdf_path);
-
-            pdf.init(
-                pdf_path,
-                function () {
-                    console.log('open pdf succ');
-                    loading(false);
-                },
-                function () {
-                    console.log('open pdf fail');
-                    loading(false);
-                }
-            );
+        ListController.eventHandler.addDeleteEventListener(function (id) {
+            BookService.remove(id).then(function () {
+                refresh();
+            }).catch(function (error) {
+                Debug.error('list delete error');
+                Debug.error(error);
+            }).then(function () {
+                LoadingMaskController.hide();
+            });
         });
 
-        list.init();
+        ListController.eventHandler.addPreviewEventListener(function (id) {
+            var books = BookService.get(),
+                index = BookService.indexOfById(id),
+                book = books[index],
+                pdfPath = book.filename;
+
+            PDFController.open(pdfPath).then(function () {
+                LoadingMaskController.hide();
+            });
+        });
+
+        ListController.init(_$list);
     }
 
     function initForm() {
-        form.eventHandler.onSaveEvent(function (formData, file) {
-            loading(true);
-            formData.id = (new Date()).getTime();
-
-            if (file.files.length === 0) {
-                book_service.create(formData, function () {
-                    refresh();
-                    loading(false);
-                }, function () {
-                    console.error('save book error');
-                    refresh();
-                    loading(false);
-                });
-            } else {
-                book_service.createWithPDF(
-                    formData,
-                    file,
-                    function () {
-                        refresh();
-                        loading(false);
-                    },
-                    function () {
-                        console.error('save book error');
-                        refresh();
-                        loading(false);
-                    },
-                    function (percentage) {
-                        if (percentage !== 100) {
-                            show_progress(true, percentage);
-                        } else {
-                            show_progress(false);
-                        }
-                    },
-                    function (percentage) {
-                        if (percentage !== 100) {
-                            show_progress(true, percentage);
-                        } else {
-                            show_progress(false);
-                        }
-                    }
-                );
-            }
+        FormController.eventHandler.addAlwaysEventListener(function formAlwaysEvent() {
+            LoadingMaskController.show();
         });
 
-        form.eventHandler.onDeleteEvent(function (formData) {
-            loading(true);
+        FormController.eventHandler.addSaveEventListener(function (book, files) {
+            book.id = (new Date()).getTime();
 
-            book_service.removePDF(
-                formData.id,
-                function () {
-                    console.log('remove suc');
-                    refresh();
-                    loading(false);
-                },
-                function () {
-                    console.log('remove fail');
-                    refresh();
-                    loading(false);
-                }
-            );
+            BookService.create(book, files).then(function () {
+                refresh();
+            }).catch(function (error) {
+                Debug.error('create error');
+                Debug.error(error);
+            }).then(function () {
+                LoadingMaskController.hide();
+            });
         });
 
-        form.eventHandler.onUpdateEvent(function (formData, file) {
-            loading(true);
-
-            if (file && file.files.length !== 0) {
-                book_service.updateWithPDF(
-                    formData,
-                    file,
-                    function () {
-                        console.log('update with pdf suc');
-                        refresh();
-                        loading(false);
-                    },
-                    function () {
-                        console.log('update with pdf fail');
-                        refresh();
-                        loading(false);
-                    },
-                    function (percentage) {
-                        if (percentage !== 100) {
-                            show_progress(true, percentage);
-                        } else {
-                            show_progress(false);
-                        }
-                    },
-                    function (percentage) {
-                        if (percentage !== 100) {
-                            show_progress(true, percentage);
-                        } else {
-                            show_progress(false);
-                        }
-                    }
-                );
-            } else {
-                book_service.update(
-                    formData,
-                    function () {
-                        console.log('update suc');
-                        refresh();
-                        loading(false);
-                    },
-                    function () {
-                        console.log('update fail');
-                        refresh();
-                        loading(false);
-                    }
-                );
-            }
-
+        FormController.eventHandler.addDeleteEventListener(function (id) {
+            BookService.removePDF(id).then(function () {
+                refresh();
+            }).then(function () {
+                LoadingMaskController.hide();
+            }).catch(function (error) {
+                Debug.error('delete error');
+                Debug.error(error);
+            });
         });
 
-        form.eventHandler.onCancelEvent(function () {
-            list.clearSelected();
+        FormController.eventHandler.addUpdateEventListener(function (book, files) {
+            BookService.update(book, files).then(function () {
+                refresh();
+            }).then(function () {
+                LoadingMaskController.hide();
+            }).catch(function (error) {
+                Debug.error('update error');
+                Debug.error(error);
+            });
+        });
+
+        FormController.eventHandler.addCancelEventListener(function () {
+            ListController.clearSelected();
             refresh();
         });
 
-        form.eventHandler.onPreviewEvent(function (formData) {
-            show_pdf(true);
-            loading(true);
+        FormController.eventHandler.addPreviewEventListener(function (id) {
+            var books = BookService.get(),
+                index = BookService.indexOfById(id),
+                book = books[index],
+                pdfPath = book.filename;
 
-            var pdf_path = book_service.getBookPath() + formData.filename;
-            console.log(pdf_path);
-
-            pdf.init(
-                pdf_path,
-                function () {
-                    console.log('open pdf succ');
-                    loading(false);
-                },
-                function () {
-                    console.log('open pdf fail');
-                    loading(false);
-                }
-            );
+            PDFController.open(pdfPath).then(function () {
+                LoadingMaskController.hide();
+            });
         });
 
-        form.init();
+        FormController.init(_$form);
     }
 
     function initPDF() {
-        pdf.eventHandler.onCloseEvent(function () {
-            show_pdf(false);
+        PDFController.eventHandler.addCloseEventListener(function () {});
+
+        PDFController.eventHandler.addNextEventListener(function () {
+            LoadingMaskController.hide();
         });
 
-        pdf.eventHandler.onNextEvent(function () {
-            loading(false);
+        PDFController.eventHandler.addPrevEventListener(function () {
+            LoadingMaskController.hide();
         });
 
-        pdf.eventHandler.onPrevEvent(function () {
-            loading(false);
+        PDFController.eventHandler.addPageChangeEventListener(function () {
+            LoadingMaskController.show();
         });
 
-        pdf.eventHandler.onPageChangeEvent(function () {
-            loading(true);
-        });
+        PDFController.init(_$pdf);
+    }
+
+    function initLoadingMask() {
+        LoadingMaskController.init(_$loading);
     }
 
     function init() {
         StatusBar.hide();
-        show_pdf(false);
         initList();
         initForm();
         initPDF();
-        refresh();
+        initLoadingMask();
+
+        LoadingMaskController.show();
+        BookService.fetchAll().then(function appFetchAllBooks() {
+            ListController.render(BookService.get());
+        }).catch(function appFetchAllBooksError(error) {
+            Debug.error('fetchAll error');
+            Debug.error(error);
+        }).then(function () {
+            LoadingMaskController.hide();
+        });
     }
 
     return {

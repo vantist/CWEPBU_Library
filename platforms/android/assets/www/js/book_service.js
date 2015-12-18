@@ -1,277 +1,161 @@
-/* globals define: false */
-define('book_service', ['util'], function (util) {
+/* globals
+define
+*/
+define(['file_util', 'debug'], function (FileUtil, Debug) {
     'use strict';
 
-    var base_path = cordova.file.externalDataDirectory || cordova.file.applicationStorageDirectory,
-        book_list_path = base_path + 'books/',
-        list_file = 'list.json',
+    var BOOKS_FILE = 'list.json',
+        BOOKS_FOLDER = 'book/',
+        _booksBasePath,
         _books = [];
 
-    console.log('base_path:', base_path);
-    console.log('book_list_path:', book_list_path);
+    function init() {
+        _booksBasePath = FileUtil.getBasePath() + BOOKS_FOLDER;
+
+        FileUtil.createDirectory(_booksBasePath).then(function () {
+            Debug.log('check & create directory done');
+            Debug.log('start checking books file exist or not');
+
+            return fetchAll();
+        }).catch(function (error) {
+            Debug.error('check & create directory error');
+            Debug.error(error);
+        });
+    }
 
     function convertBookData(data) {
-        var define_attr = ['id', 'title', 'isbn', 'filename'],
+        var defineAttr = ['id', 'title', 'isbn', 'filename'],
             obj = {};
 
-        for (var i in define_attr) {
-            var attr = define_attr[i];
+        for (var i in defineAttr) {
+            var attr = defineAttr[i];
             obj[attr] = data[attr];
         }
 
         return obj;
     }
 
-    function create(data, successCallback, failCallback) {
-        if (data !== undefined) {
-            _books.push(convertBookData(data));
+    function save() {
+        return FileUtil.writeFromJSON(_booksBasePath + BOOKS_FILE, _books);
+    }
+
+    /**
+     * create(book, pdfFile[file list])
+     */
+    function create(book, pdfFiles) {
+        var fileName = (pdfFiles.length === 0) ? null : book.id + '.pdf',
+            promise;
+
+        book.filename = fileName;
+        _books.push(convertBookData(book));
+
+        if (fileName) {
+            promise = FileUtil.writeFromFile(
+                _booksBasePath + fileName,
+                pdfFiles[0]
+            ).then(function () {
+                return save();
+            });
+        } else {
+            promise = save();
         }
 
-        util.file.write(
-            book_list_path,
-            list_file,
-            _books,
-            function () {
-                console.log('added book to list');
-
-                if (typeof successCallback === 'function') {
-                    successCallback.call(this);
-                }
-            },
-            function (error) {
-                console.log('add book error');
-                console.error(error);
-
-                if (typeof failCallback === 'function') {
-                    failCallback.call(this);
-                }
-            }
-        );
+        return promise;
     }
 
-    function fetch(callback) {
-        console.log('fetch start');
-        util.file.read(
-            book_list_path,
-            list_file,
-            function (list) {
-                _books = list;
+    function fetchAll() {
+        var readPromise = FileUtil.readToJson(_booksBasePath + BOOKS_FILE);
+        Debug.log('fetch All starting');
 
-                console.log('fetch done.');
-                console.log(_books);
-
-                if (typeof callback === 'function') {
-                    callback.call(this, list);
-                }
-            },
-            function (error) {
-                console.log('fetch list error');
-            }
-        );
+        return readPromise.then(function fetchAllBooks(books) {
+            Debug.log(books);
+            _books = books;
+            return _books;
+        });
     }
 
-    function getBookIndexWithId(id) {
+    function indexOfById(id) {
         id = Number(id);
-
         for (var i = _books.length - 1; i >= 0; i--) {
             if (_books[i].id === id) {
-                break;
+                return i;
             }
         }
 
-        return i;
+        return -1;
     }
 
-    function checkExist(id) {
-        if (getBookIndexWithId(id) >= 0) {
-            return true;
-        }
-
-        return false;
+    function contains(id) {
+        return indexOfById(id) >= 0;
     }
 
     function updateBook(id, data) {
-        var index = getBookIndexWithId(id);
+        var index = indexOfById(id);
 
         if (index >= 0) {
             _books[index] = convertBookData(data);
         }
     }
 
-    function update(data, successCallback, failCallback) {
-        updateBook(data.id, data);
+    /**
+     * update(book, pdfFile[file list])
+     */
+    function update(book, pdfFiles) {
+        var fileName = (pdfFiles === undefined || pdfFiles.length === 0) ? null : book.id + '.pdf',
+            promise;
 
-        create(
-            undefined,
-            function () {
-                if (typeof successCallback === 'function') {
-                    successCallback.call(this);
-                }
-            },
-            function () {
-                if (typeof failCallback === 'function') {
-                    failCallback.call(this);
-                }
-            }
-        );
+        book.filename = book.filename || fileName;
+        updateBook(book.id, book);
+
+        if (fileName) {
+            promise = FileUtil.writeFromFile(
+                _booksBasePath + fileName,
+                pdfFiles[0]
+            ).then(function () {
+                return save();
+            });
+        } else {
+            promise = save();
+        }
+
+        return promise;
     }
 
-    function remove(id, successCallback, failCallback) {
-        var index = getBookIndexWithId(id);
+    function remove(id) {
+        var index = indexOfById(id);
         _books.splice(index, 1);
 
-        create(
-            undefined,
-            function () {
-                if (typeof successCallback === 'function') {
-                    successCallback.call(this);
-                }
-            },
-            function () {
-                if (typeof failCallback === 'function') {
-                    failCallback.call(this);
-                }
-            }
-        );
+        return save();
     }
 
-    function get() {
-        return _books;
+    function removePDF(id) {
+
+        var index = indexOfById(id),
+            fileName = _books[index].filename;
+
+        return FileUtil.remove(
+            _booksBasePath + fileName
+        ).then(function () {
+            _books[index].filename = null;
+            return update(_books[index]);
+        });
     }
 
-    function set(books) {
-        _books = books;
-    }
-
-    function createWithPDF(data, file, successCallback, failCallback, readingProgressCallback, writingProgressCallback) {
-        var fileName = data.id + '.pdf';
-        data.filename = fileName;
-
-        util.file.writeWithFile(
-            book_list_path,
-            fileName,
-            file.files[0],
-            function (uri) {
-                create(data, successCallback, failCallback);
-            },
-            function () {
-                console.error('create with pdf fail');
-            },
-            function (percentage) {
-                console.log('writing file:', percentage, '%');
-
-                if (typeof writingProgressCallback === 'function') {
-                    writingProgressCallback.call(this, percentage);
-                }
-            }
-        );
-    }
-
-    function updateWithPDF(data, file, successCallback, failCallback, readingProgressCallback, writingProgressCallback) {
-        var filename = data.id + '.pdf';
-        data.filename = filename;
-
-        util.file.writeWithFile(
-            book_list_path,
-            filename,
-            file.files[0],
-            function (uri) {
-                update(data, successCallback, failCallback);
-            },
-            function () {
-                console.error('create with pdf fail');
-            },
-            function (percentage) {
-                console.log('writing file:', percentage, '%');
-
-                if (typeof writingProgressCallback === 'function') {
-                    writingProgressCallback.call(this, percentage);
-                }
-
-            }
-
-        );
-    }
-
-    function removePDF(id, successCallback, failCallback) {
-
-        var index = getBookIndexWithId(id),
-            filename = _books[index].filename;
-        util.file.remove(
-            book_list_path,
-            filename,
-            function (entry) {
-                console.log('remove pdf succ', filename);
-
-                delete _books[index].filename;
-
-                update(
-                    _books[index],
-                    function () {
-                        if (typeof successCallback === 'function') {
-                            successCallback.call(this);
-                        }
-                    },
-                    function () {
-                        console.log('remove pdf fail, update data stage');
-                        if (typeof failCallback === 'function') {
-                            failCallback.call(this);
-                        }
-                    }
-                );
-            },
-            function (error) {
-                console.log('remove pdf fail', filename);
-                if (typeof failCallback === 'function') {
-                    failCallback.call(this);
-                }
-            }
-        );
-    }
-
-    function getBookPath() {
-        return book_list_path;
-    }
-
-    function openPDF(id, successCallback, failCallback) {
-        var index = getBookIndexWithId(id),
-            book = _books[index];
-
-        console.log('try to open file:',book_list_path + book.filename,'it\'s a pdf file');
-        util.pdf.open(
-            book_list_path + book.filename,
-            '',
-            undefined,
-            function (result) {
-                if (typeof successCallback === 'function') {
-                    successCallback.call(this, result);
-                }
-            },
-            function (error) {
-                if (typeof failCallback === 'function') {
-                    failCallback.call(this, error);
-                }
-             }
-        );
-    }
-
-    function getPDFInfo() {
-
-    }
+    init();
 
     return {
-        checkExist: checkExist,
-        fetch: fetch,
-        get: get,
-        set: set,
+        get: function () {
+            return _books;
+        },
+        contains: contains,
+        fetchAll: fetchAll,
         remove: remove,
         update: update,
-        updateWithPDF: updateWithPDF,
         create: create,
-        createWithPDF: createWithPDF,
         removePDF: removePDF,
-        getBookPath: getBookPath,
-        openPDF: openPDF,
-        getPDFInfo: getPDFInfo
+        indexOfById: indexOfById,
+        getBooksFolder: function () {
+            return _booksBasePath;
+        }
     };
 });
