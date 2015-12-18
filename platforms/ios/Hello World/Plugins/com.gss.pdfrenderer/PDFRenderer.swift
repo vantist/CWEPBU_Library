@@ -128,9 +128,9 @@ class PDFRenderer : CDVPlugin {
                 } else if (!self.customPath.isEmpty) {
                     path = path + "/" + self.addSlashFirstAndLast(self.customPath)
                 } else {
-                    path = path + self.fileName
+                    path = path + self.fileName + "/"
                 }
-                path = path + "/" + String(self.currentPage) + format
+                path = path + String(self.currentPage) + format
                 data.writeToFile(path, atomically: true)
                 pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAsString: path)
             }

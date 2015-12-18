@@ -1,5 +1,5 @@
 /* globals define: false */
-define('list', ['jquery', 'configured_dust', 'debug'], function ($, dust, debug) {
+define(['jquery', 'configured_dust', 'debug'], function ($, Dust, Debug) {
     'use strict';
 
     var _$list,
@@ -18,9 +18,9 @@ define('list', ['jquery', 'configured_dust', 'debug'], function ($, dust, debug)
     }
 
     function render(data) {
-        dust.render(LIST_TEMPLATE, data, function dustRenderList(err, out) {
+        Dust.render(LIST_TEMPLATE, data, function dustRenderList(err, out) {
             if (err) {
-                debug.error(err);
+                Debug.error(err);
             } else {
                 _$list.empty().append(out);
             }

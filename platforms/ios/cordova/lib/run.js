@@ -33,7 +33,7 @@ module.exports.run = function (argv) {
 
     // parse args here
     // --debug and --release args not parsed here
-    // but still valid since they can be passed down to build command 
+    // but still valid since they can be passed down to build command
     var args  = nopt({
         // "archs": String,     // TODO: add support for building different archs
         'list': Boolean,
@@ -118,7 +118,7 @@ function deployToDevice(appPath) {
  * @return {Promise}        Resolves when deploy succeeds otherwise rejects
  */
 function deployToSim(appPath, target) {
-    // Select target device for emulator. Default is 'iPhone-6' 
+    // Select target device for emulator. Default is 'iPhone-6'
     if (!target) {
         target = 'iPhone-6';
         console.log('No target specified for emulator. Deploying to ' + target + ' simulator');

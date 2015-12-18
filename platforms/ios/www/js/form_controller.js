@@ -1,7 +1,7 @@
 /* globals
 define
 */
-define('form', ['jquery', 'configured_dust', 'debug'], function ($, dust, debug) {
+define(['jquery', 'configured_dust', 'debug'], function ($, Dust, Debug) {
     'use strict';
 
     var _$form,
@@ -16,19 +16,20 @@ define('form', ['jquery', 'configured_dust', 'debug'], function ($, dust, debug)
 
     function init($e) {
         _$form = $e;
+        render();
         bindEvent();
     }
 
     function render(book) {
-        var template = (book === undefined) ? EDIT_TEMPLATE : CREATE_TEMPLATE;
+        var template = (book === undefined) ? CREATE_TEMPLATE : EDIT_TEMPLATE;
 
         _$form.empty();
-        dust.render(
+        Dust.render(
             template,
             book,
             function (err, out) {
                 if (err) {
-                    debug.error(err);
+                    Debug.error(err);
                 } else {
                     _$form.append(out);
                 }
